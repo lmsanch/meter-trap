@@ -1,0 +1,5 @@
+# Ensure only whitelisted artifacts are published.
+# The publish.py script enforces this — this file is a secondary guard.
+*.pyc
+__pycache__/
+.DS_Store
