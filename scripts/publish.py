@@ -3,8 +3,11 @@
 publish.py — Whitelist-gated publisher for the public meter-trap repo.
 
 Copies ONLY approved artifacts from the private engine repo to the public
-evidence repo. Any file not matching the whitelist is refused with a warning
-and the script exits with code 1.
+evidence repo. Files in publish directories that do not match the whitelist
+are refused with a warning and the script exits with code 1.
+
+Files outside the publish directories (e.g. sim/, data/, notebooks/) are
+ignored entirely — they are part of the private engine and never published.
 
 Usage:
     python3 scripts/publish.py --source /research/meter-trap --dest /tmp/meter-trap-public
@@ -29,6 +32,10 @@ WHITELIST = [
     "README.md",
 ]
 
+# Directories that publish from. Files inside these dirs are checked against
+# the whitelist. Anything outside these dirs is ignored (private engine code).
+PUBLISH_DIRS = {"figures", "register", "provenance", "predictions"}
+
 
 def is_whitelisted(rel_path: str) -> bool:
     """Return True if the relative path matches any whitelist glob pattern."""
@@ -39,31 +46,51 @@ def is_whitelisted(rel_path: str) -> bool:
     return False
 
 
-def collect_files(source: Path) -> list[Path]:
-    """Walk the source tree and return all regular files (excluding .git)."""
-    files = []
+def classify_files(source: Path) -> tuple[list[tuple[Path, str]], list[tuple[Path, str]]]:
+    """Walk source and split files into (approved, refused).
+
+    Only files in PUBLISH_DIRS or root-level whitelisted files are considered.
+    Everything else is ignored.
+    """
+    approved = []
+    refused = []
+
     for path in source.rglob("*"):
-        if path.is_file() and ".git" not in path.parts:
-            files.append(path)
-    return files
+        if not path.is_file():
+            continue
+        if ".git" in path.parts:
+            continue
+
+        rel = path.relative_to(source).as_posix()
+        top = rel.split("/")[0]
+
+        # Root-level files (no directory component)
+        if "/" not in rel:
+            if is_whitelisted(rel):
+                approved.append((path, rel))
+            # Ignore root-level files not in whitelist (Makefile, etc.)
+            continue
+
+        # Files inside publish directories
+        if top in PUBLISH_DIRS:
+            if is_whitelisted(rel):
+                approved.append((path, rel))
+            else:
+                refused.append((path, rel))
+            continue
+
+        # Files outside publish dirs — ignore (private engine code)
+
+    return approved, refused
 
 
 def publish(source: Path, dest: Path, dry_run: bool) -> int:
     """Copy whitelisted files from source to dest. Return 0 on success, 1 on refusal."""
-    files = collect_files(source)
-    approved = []
-    refused = []
-
-    for f in files:
-        rel = f.relative_to(source).as_posix()
-        if is_whitelisted(rel):
-            approved.append((f, rel))
-        else:
-            refused.append((f, rel))
+    approved, refused = classify_files(source)
 
     if refused:
-        print("\n=== REFUSED (not in whitelist) ===")
-        for _, rel in sorted(refused):
+        print("\n=== REFUSED (in publish dir but not whitelisted) ===")
+        for _, rel in sorted(refused, key=lambda x: x[1]):
             print(f"  WARNING: refused '{rel}' — not in publish whitelist")
         print(f"\n{len(refused)} file(s) refused. Nothing was copied.")
         return 1
