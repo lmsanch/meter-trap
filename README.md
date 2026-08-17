@@ -1,133 +1,25 @@
-# Meter-Trap — Anthropic IPO Quantitative Analysis
+# Meter-Trap — public evidence repo
 
 > **Analytical opinion, not investment advice.**
 
-> **Analytical opinion, not investment advice.**
+A probabilistic analysis of the Anthropic IPO (reported for ~October 2026 at a reported ~$2 trillion valuation). This repository holds only the *published* artifacts of the analysis: charts, the issues register from the analyst panel, data provenance, and dated directional calls. The engine (code, parameters, calibrations, prompts, model weights) is private; before the IPO prices, a SHA-256 hash of the private methodology file is published here so that the analysis can later be shown to pre-date the event unaltered.
 
-> **Analytical opinion, not investment advice.**
+## What is here
 
----
+| folder | contents |
+|---|---|
+| `figures/` | fan charts and probability exhibits (fundamental lens, market-behaviour lens, agreement zone, panel trajectories) |
+| `register/` | the analyst panel's issues register: each disagreement, its category (market / regulatory / technical / competitive), whether it is falsifiable, and what data would settle it |
+| `provenance/` | every quantitative input, dated and sourced, with confidence flags (verified-primary / secondary / single-source / estimate) |
+| `predictions/` | dated directional calls with numbers, and the methodology hash; outcomes are scored (Brier) as quarters resolve |
 
-## What this is
+## Methodology (techniques named; parameters withheld)
 
-This repository is the **public evidence repo** for the Meter-Trap program: a
-probabilistic analysis of the Anthropic IPO (approximately October 2026, with a
-reported target valuation near $2 trillion).
+1. **Regime-switching Monte Carlo (fundamental lens).** Five correlated quarterly drivers from a 2026Q4 entry to a 2031Q4 exit — metered-revenue growth with momentum / deceleration / shock regimes, revenue-mix shift, gross-margin path, a Poisson regulatory-access shock process calibrated to the June-2026 export episode, and a valuation multiple conditional on growth, margin and revenue commitment. 100,000 seeded paths. Before any headline number is produced the engine must reproduce, deterministically, the leaked Coatue base case (entry, 2030 ARR, exit value, IRR); this gate passed.
+2. **Kernel-weighted similarity over IPO comparables (market-behaviour lens).** Standardised at-IPO features of 14 large technology listings, a Mahalanobis kernel, and resampling of their 8-quarter post-IPO return paths. Leave-one-out validation retrodicts Snowflake's 2022 re-rating and CoreWeave's post-IPO drawdown.
+3. **Multi-model adversarial analyst panel with belief-revision tracking.** Bull / bear / neutral personas played by several open-weight model families, roles rotating each round; an independent open-weight judge model applies a fixed rubric, accepts a score revision only when it is tied to cited evidence or a simulation result, and logs evidence-driven versus conformity updates separately. Analysts may request engine runs with parameter changes; results enter the next round. Stopping rule: score deltas below threshold for two consecutive rounds, or issues register exhausted.
+4. **State-space backfill** for GPU-rental price series used in the compute-cost discussion (documented separately with per-segment anchor density).
 
-It contains only published artifacts — charts, registers, provenance records, and
-dated directional calls. The private engine repo (`meter-trap-engine`) holds all
-code, calibrations, prompts, weights, and model parameters. **Nothing executable
-or configurable appears here.**
-
-*Analytical opinion, not investment advice.*
-
----
-
-## Methodology
-
-The analysis combines four techniques. Only the names and high-level descriptions
-are disclosed; parameters, calibrations, prompts, weights, and implementation
-details are deliberately withheld.
-
-### Regime-switching Monte Carlo
-
-A regime-switching Monte Carlo simulation models the IPO outcome distribution
-using five correlated quarterly macroeconomic and firm-level drivers. One hundred
-thousand paths are drawn per scenario to produce fan charts and probability
-tables over valuation, raise size, and post-IPO trajectory.
-
-*Analytical opinion, not investment advice.*
-
-### Kernel-weighted similarity
-
-A kernel-weighted similarity estimator ranks the target against historical IPO
-comparables using Mahalanobis-distance k-nearest-neighbors. The kernel weighting
-emphasizes closer comps and downweights distant ones, producing a similarity-
-weighted valuation anchor that feeds into the Monte Carlo prior.
-
-*Analytical opinion, not investment advice.*
-
-### Multi-model adversarial analyst panel
-
-A multi-model adversarial analyst panel deliberates on the evidence. Multiple
-independent analyst instances argue opposing positions, challenge each other's
-assumptions, and revise their beliefs through structured rounds. An issues
-register records every disagreement, resolution, and residual uncertainty.
-
-*Analytical opinion, not investment advice.*
-
-### State-space backfill for gapped GPU price series
-
-A state-space model backfills gaps in GPU pricing time series that arise from
-thin trading and data-source discontinuities. The backfilled series provides
-continuous inputs for the similarity and Monte Carlo components.
-
-*Analytical opinion, not investment advice.*
-
----
-
-## Repository structure
-
-```
-figures/       Fan charts, distributions, probability tables (PNG/SVG only)
-register/      Issues register CSV from the deliberation panel
-provenance/    Data provenance CSV — every input dated and sourced
-predictions/   Dated directional calls and pre-commitment hash
-scripts/       Publish script (whitelist-gated; copies from private engine)
-README.md      This file
-```
-
-No source code, YAML files, prompts, weights, model parameters, or notebooks are
-published here. The `scripts/publish.py` whitelist enforces this automatically.
-
-*Analytical opinion, not investment advice.*
-
----
-
-## Pre-commitment device
-
-Before IPO pricing, this repository will contain:
-
-1. **Dated directional calls** — specific, timestamped predictions about
-   valuation range, raise size, and first-day / first-month direction, committed
-   to `predictions/directional_calls.csv` before the event.
-
-2. **A SHA-256 hash** of the full private methodology file, committed to
-   `predictions/methodology_hash.txt`. This allows post-hoc verification that
-   the methodology was not retroactively altered to fit the outcome, without
-   disclosing the methodology itself.
-
-This is a pre-commitment device: the predictions and hash are published before
-the event, making it impossible to silently revise the analysis after the fact.
-
-*Analytical opinion, not investment advice.*
-
----
-
-## Data provenance
-
-Every input is dated and sourced. The `provenance/provenance.csv` file records,
-for each data point used in the analysis: the source URL, the as-of date, the
-confidence level, and the collection method. No input enters the analysis without
-a provenance entry.
-
-*Analytical opinion, not investment advice.*
-
----
-
-## Publish process
-
-Artifacts flow from the private engine repo to this public repo through
-`scripts/publish.py`, which enforces a strict whitelist:
-
-- `figures/*.png` and `figures/*.svg` — chart images only
-- `register/issues_register.csv` — deliberation panel issues register
-- `provenance/provenance.csv` — data provenance
-- `predictions/directional_calls.csv` — dated directional calls
-- `predictions/methodology_hash.txt` — SHA-256 hash of private methodology
-- `README.md` — this file
-
-Any file not matching the whitelist is refused. The script exits with error code
-1 if any non-whitelisted file is attempted.
+Headline outputs, the fan charts, the register and the convergence trajectories are published here; the private repo holds everything reproducible (`make all` from raw CSVs).
 
 *Analytical opinion, not investment advice.*
